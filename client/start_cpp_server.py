@@ -3,6 +3,8 @@ import time
 import subprocess
 import pathlib
 
+from connection_handler import ConnectionHandler
+
 
 def is_server_ready(host, port, timeout=10):
     start_time = time.time()
@@ -31,4 +33,8 @@ if __name__ == "__main__":
     print(cpp_server_path)
     print(cpp_server_path.exists())
     server_process = start_cpp_server(cpp_server_path)
+
+    handler = ConnectionHandler()
+    handler.start_client()
+
     server_process.terminate()

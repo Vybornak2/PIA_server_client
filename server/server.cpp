@@ -7,12 +7,10 @@
 
 int main()
 {
-    int server_fd, new_socket, valread;
+    int server_fd;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
-    char buffer[1024] = {0};
-    const char *message;
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -31,42 +29,56 @@ int main()
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(12345);
 
-    // Forcefully attaching socket to the port 12345
+    // Bind
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
+
+    // Listen
     if (listen(server_fd, 3) < 0)
     {
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
-    {
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
 
+    // Accept and process connections
     while (true)
     {
-        valread = read(new_socket, buffer, 1024);
-        if (valread == 0)
-        {
-            break; // Connection closed by client
-        }
-        buffer[valread] = '\0'; // Null-terminate the string
-        std::cout << "Client: " << buffer << std::endl;
+        char buffer[1024] = {0};
+        std::cout << "Waiting for connections..." << std::endl;
 
-        if (strcmp(buffer, "exit") == 0)
+        int new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+        if (new_socket < 0)
         {
-            break; // Exit if "exit" command is received
+            perror("accept");
+            continue;
         }
 
-        std::string response = std::to_string(strlen(buffer));
-        send(new_socket, response.c_str(), response.length(), 0);
+        int valread = read(new_socket, buffer, 1024);
+        if (valread > 0)
+        {
+            buffer[valread] = '\0'; // Null-terminate the string
+            std::cout << "Client: " << buffer << std::endl;
+
+            if (strcmp(buffer, "exit") == 0)
+            {
+                std::cout << "Shutdown command received. Exiting." << std::endl;
+                break;
+            }
+
+            std::string response = std::to_string(strlen(buffer));
+            for (int i = 0; i < 10; i++)
+            {
+                send(new_socket, response.c_str(), response.length(), 0);
+                sleep(1);
+            }
+        }
+
+        close(new_socket); // Close the connection
     }
 
-    close(new_socket);
+    close(server_fd); // Cleanup
     return 0;
 }
