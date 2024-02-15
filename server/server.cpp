@@ -4,6 +4,43 @@
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <thread>
+#include "NetworkUtils.h"
+#include "VectorProcessing.h"
+
+void handleClient(int clientSocket)
+{
+    try
+    {
+        bool keepRunning = true;
+        while (keepRunning)
+        {
+            std::string receivedData = receiveDataFunction(clientSocket);
+            if (receivedData.empty() || receivedData == "end")
+            { // Example "end" signal check
+                keepRunning = false;
+                break;
+            }
+
+            auto vectors = nlohmann::json::parse(receivedData);
+
+            std::pair<std::vector<float>, std::vector<float>> vectorPair = extractVectors(vectors);
+            std::pair<std::vector<float>, std::vector<float>> ampMean = getAmpMean(vectorPair);
+            std::vector<float> MohrParamsAmp = getMohrParams(ampMean.first);
+            std::vector<float> MohrParamsMean = getMohrParams(ampMean.second);
+
+            const std::vector<std::vector<float>> computedValues = {MohrParamsAmp, MohrParamsMean};
+            std::string response = nlohmann::json(computedValues).dump();
+            sendResponseFunction(clientSocket, response);
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error handling client: " << e.what() << std::endl;
+    }
+    std::cout << "Closing connection\n";
+    close(clientSocket);
+}
 
 int main()
 {
@@ -43,40 +80,24 @@ int main()
         exit(EXIT_FAILURE);
     }
 
+    std::cout << "Server is running on port 12345\n";
+
     // Accept and process connections
     while (true)
     {
-        char buffer[1024] = {0};
-        std::cout << "Waiting for connections..." << std::endl;
-
-        int new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-        if (new_socket < 0)
+        std::cout << "Waiting for a connection...\n";
+        int client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+        if (client_socket < 0)
         {
+            std::cout << "Failed to accept connection\n";
             perror("accept");
             continue;
         }
+        std::cout << "Client connected\n";
 
-        int valread = read(new_socket, buffer, 1024);
-        if (valread > 0)
-        {
-            buffer[valread] = '\0'; // Null-terminate the string
-            std::cout << "Client: " << buffer << std::endl;
-
-            if (strcmp(buffer, "exit") == 0)
-            {
-                std::cout << "Shutdown command received. Exiting." << std::endl;
-                break;
-            }
-
-            std::string response = std::to_string(strlen(buffer));
-            for (int i = 0; i < 10; i++)
-            {
-                send(new_socket, response.c_str(), response.length(), 0);
-                sleep(1);
-            }
-        }
-
-        close(new_socket); // Close the connection
+        // Spawn a new thread to handle the client connection
+        std::thread clientThread(handleClient, client_socket);
+        clientThread.detach(); // Detach the thread to allow it to run independently
     }
 
     close(server_fd); // Cleanup
