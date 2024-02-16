@@ -6,19 +6,31 @@ Package also contains client for generation of random vector pairs that are bein
 
 Server utilizes port 12345
 
-Entrypoint: **client.main.py** - starts server, starts client, sends data, receives data.
+## Entrypoint:
+
+**client.main.py**
+
+- starts server, starts client, sends data, receives data.
+- only test example of sending 10 vector pairs
 
 note: 
 
 - make sure nothing else is listeing or running on selected port.
 - lsof -i :12345 to check on linux
 
-## Compatibily:
+## Prerequisites/Compatibility:
 - linux
 
     *windows compatibility is unknown*
 
 ---
+
+- C++ <nlohmann/json.hpp>
+
+    for parsing of sent data
+    
+    can be installed via vcpkg
+
 ## Contents:
 
 ### 1. Server - C++
