@@ -23,6 +23,7 @@ class ConnectionHandler:
         return json.dumps(data).encode('utf-8')
 
     def send_data(self, vectors):
+        print(f'Seninging: {vectors}')
         if not self.running:  # Check if the connection has been closed
             print("Connection closed. Cannot send data.")
             return
@@ -45,7 +46,7 @@ class ConnectionHandler:
         try:
             end_signal = b"end\n"  # Assuming "end\n" is the agreed-upon signal
             self.socket.sendall(end_signal)
-            print("End signal sent.")
+            print("\nEnd signal sent.")
         except Exception as e:
             print(f"Error sending end signal: {e}")
         finally:
@@ -91,14 +92,14 @@ class ConnectionHandler:
         print("All threads joined.")
 
 
-if __name__ == "__main__":
+def run_client():
     iterations = 10
     vector_pairs = [[value_generator.generate_vector3(-10, 10) for _ in range(2)] for _ in range(iterations)]
     handler = ConnectionHandler()
     handler.start_client()  # Start listening for responses in a separate thread
 
     try:
-        print("Sending data...")
+        print("\nClient: Sending data...")
         for i, vector_pair in enumerate(vector_pairs):
             handler.send_data(vector_pair)
             time.sleep(1)  # Example delay between sends
@@ -107,3 +108,5 @@ if __name__ == "__main__":
         handler.join_threads()
 
 
+if __name__ == "__main__":
+    run_client()

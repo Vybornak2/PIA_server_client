@@ -1,9 +1,6 @@
 import socket
 import time
 import subprocess
-import pathlib
-
-from connection_handler import ConnectionHandler
 
 
 def is_server_ready(host, port, timeout=10):
@@ -11,13 +8,17 @@ def is_server_ready(host, port, timeout=10):
     while time.time() - start_time < timeout:
         try:
             with socket.create_connection((host, port), timeout=1):
+                print('Tesiting if server is ready:')
                 return True
         except (ConnectionRefusedError, socket.timeout):
+            print('Waiting for server to get ready.')
             time.sleep(0.1)
     return False
 
 
 def start_cpp_server(executable_path, host='localhost', port=12345):
+    print(30 * '=')
+    print('Starting server...')
     server_process = subprocess.Popen([executable_path])
     if is_server_ready(host, port):
         print("Server is ready.")
@@ -29,12 +30,4 @@ def start_cpp_server(executable_path, host='localhost', port=12345):
 
 
 if __name__ == "__main__":
-    cpp_server_path = pathlib.Path(__file__).parent.parent.absolute() / "server" / "server"
-    print(cpp_server_path)
-    print(cpp_server_path.exists())
-    server_process = start_cpp_server(cpp_server_path)
-
-    handler = ConnectionHandler()
-    handler.start_client()
-
-    server_process.terminate()
+    start_cpp_server()

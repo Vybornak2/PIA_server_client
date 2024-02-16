@@ -36,9 +36,9 @@ void handleClient(int clientSocket)
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Error handling client: " << e.what() << std::endl;
+        std::cerr << "Server: Error handling client: " << e.what() << std::endl;
     }
-    std::cout << "Closing connection\n";
+    std::cout << "Server: Closing connection\n";
     close(clientSocket);
 }
 
@@ -80,20 +80,20 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    std::cout << "Server is running on port 12345\n";
+    std::cout << "Server: Server is running on port 12345\n";
 
     // Accept and process connections
     while (true)
     {
-        std::cout << "Waiting for a connection...\n";
+        std::cout << "Server: Waiting for a connection...\n";
         int client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
         if (client_socket < 0)
         {
-            std::cout << "Failed to accept connection\n";
+            std::cout << "Server: Failed to accept connection\n";
             perror("accept");
             continue;
         }
-        std::cout << "Client connected\n";
+        std::cout << "Server: Client connected\n";
 
         // Spawn a new thread to handle the client connection
         std::thread clientThread(handleClient, client_socket);
